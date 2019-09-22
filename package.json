@@ -1,5 +1,5 @@
 {
-  "name": "@mezmerik/strapi-provider-upload-azure-storage",
+  "name": "strapi-provider-upload-azure-storage",
   "version": "1.0.2",
   "license": "MIT",
   "main": "./lib",
