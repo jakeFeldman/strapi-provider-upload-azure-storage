@@ -24,6 +24,22 @@ yarn add strapi-provider-upload-azure-storage
 npm install strapi-provider-upload-azure-storage
 ```
 
+## Usage
+
+After installing in a strapi project, strapi will recognize the provider inside the media settings.
+
+After selecting the "azure" provider, the required fields are needed.
+
+Account name - Storage account name
+
+Secret Access Key - Azure storage account secret access key.
+
+Container Name - The name of the conatiner in the Azure storage account.
+
+Default Path - The default folder inside the container in which your assets will be stored. i.e. "/static"
+
+Concurrent Uploads - The maximum concurrent buffers. Azure's `uploadStreamToBlockBlob` requires a max number of concurrent uploads. i.e. 20.
+
 ## Contributing
 
 Contributions are welcome
