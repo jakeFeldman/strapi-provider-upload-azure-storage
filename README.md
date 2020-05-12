@@ -26,6 +26,27 @@ npm install strapi-provider-upload-azure-storage
 
 ## Usage
 
+### Strapi version >= beta20.x
+
+Coming with Media Library the settings of the upload plugin were moved to file. Official documentation [here](https://strapi.io/documentation/3.0.0-beta.x/plugins/upload.html#using-a-provider).
+
+To enable the provider, create or edit the file at ```./extensions/upload/config/settings.json```
+
+This is an example settings.json file for Azure storage:
+```json
+  {
+    "provider": "azure-storage",
+    "providerOptions": {
+      "account": "your-storage-account-name",
+      "accountKey": "your-storage-account-key",
+      "containerName": "your-container-name",
+      "defaultPath": "your-default-path",
+      "maxConcurrent": 10
+    }
+  }
+```
+
+### Strapi version < beta20.x
 After installing in a strapi project, strapi will recognize the provider inside the media settings.
 
 After selecting the "azure" provider, the required fields are needed.
