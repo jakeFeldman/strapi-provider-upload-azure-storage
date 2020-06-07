@@ -41,10 +41,13 @@ This is an example settings.json file for Azure storage:
       "accountKey": "your-storage-account-key",
       "containerName": "your-container-name",
       "defaultPath": "your-default-path",
+      "serviceBaseURL": "service-base-url (optional)",
       "maxConcurrent": 10
     }
   }
 ```
+
+`serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [https://github.com/Azure/Azurite/](Azurite). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.
 
 ### Strapi version < beta20.x
 After installing in a strapi project, strapi will recognize the provider inside the media settings.
