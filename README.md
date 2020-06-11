@@ -26,43 +26,31 @@ npm install strapi-provider-upload-azure-storage
 
 ## Usage
 
-### Strapi version >= beta20.x
+### Strapi version >= 3.0.0
 
-Coming with Media Library the settings of the upload plugin were moved to file. Official documentation [here](https://strapi.io/documentation/3.0.0-beta.x/plugins/upload.html#using-a-provider).
+With a stable release of Strapi 3.0.0, the configuration was moved to a JavaScript file. Official documentation [here](https://strapi.io/documentation/v3.x/plugins/upload.html#using-a-provider).
 
-To enable the provider, create or edit the file at ```./extensions/upload/config/settings.json```
+To enable the provider, create or edit the file at ```./config/plugins.js```.
 
-This is an example settings.json file for Azure storage:
-```json
-  {
-    "provider": "azure-storage",
-    "providerOptions": {
-      "account": "your-storage-account-name",
-      "accountKey": "your-storage-account-key",
-      "containerName": "your-container-name",
-      "defaultPath": "your-default-path",
-      "serviceBaseURL": "service-base-url (optional)",
-      "maxConcurrent": 10
+This is an example plugins.js file for Azure storage:
+```JavaScript
+module.exports = ({ env }) => ({
+  upload: {
+    provider: 'azure-storage',
+    providerOptions: {
+      account: env('STORAGE_ACCOUNT'),
+      accountKey: env('STORAGE_ACCOUNT_KEY'),
+      serviceBaseURL: env('STORAGE_URL'),
+      containerName: env('STORAGE_CONTAINER_NAME'),
+      defaultPath: 'assets',
+      maxConcurrent: 10
     }
   }
+});
 ```
 
-`serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [https://github.com/Azure/Azurite/](Azurite). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.
-
-### Strapi version < beta20.x
-After installing in a strapi project, strapi will recognize the provider inside the media settings.
-
-After selecting the "azure" provider, the required fields are needed.
-
-Account name - Storage account name
-
-Secret Access Key - Azure storage account secret access key.
-
-Container Name - The name of the conatiner in the Azure storage account.
-
-Default Path - The default folder inside the container in which your assets will be stored. i.e. "/static"
-
-Concurrent Uploads - The maximum concurrent buffers. Azure's `uploadStreamToBlockBlob` requires a max number of concurrent uploads. i.e. 20.
+`serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [https://github.com/Azure/Azurite/](Azurite). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
+When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
 
 ## Contributing
 
