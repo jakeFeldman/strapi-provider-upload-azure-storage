@@ -49,7 +49,7 @@ module.exports = ({ env }) => ({
 });
 ```
 
-`serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [https://github.com/Azure/Azurite/](Azurite). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
+`serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [Azurite](https://github.com/Azure/Azurite/). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
 
 ## Contributing
