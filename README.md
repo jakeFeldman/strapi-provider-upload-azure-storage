@@ -30,7 +30,7 @@ npm install strapi-provider-upload-azure-storage
 
 ### Strapi version >= 3.0.0
 
-With a stable release of Strapi 3.0.0, the configuration was moved to a JavaScript file. Official documentation [here](https://strapi.io/documentation/v3.x/plugins/upload.html#using-a-provider).
+With a stable release of Strapi 3.0.0, the configuration was moved to a JavaScript file. Official documentation [here](https://strapi.io/documentation/developer-docs/latest/development/plugins/upload.html#using-a-provider).
 
 To enable the provider, create or edit the file at ```./config/plugins.js```.
 
@@ -44,6 +44,7 @@ module.exports = ({ env }) => ({
       accountKey: env('STORAGE_ACCOUNT_KEY'),
       serviceBaseURL: env('STORAGE_URL'),
       containerName: env('STORAGE_CONTAINER_NAME'),
+      cdnBaseURL: env('STORAGE_CDN_URL'),
       defaultPath: 'assets',
       maxConcurrent: 10
     }
@@ -53,6 +54,8 @@ module.exports = ({ env }) => ({
 
 `serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [Azurite](https://github.com/Azure/Azurite/). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
+
+`cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
 
 ## Contributing
 
