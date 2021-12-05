@@ -7,7 +7,7 @@
     "lib": "./lib"
   },
   "dependencies": {
-    "@azure/storage-blob": "^10.5.0"
+    "@azure/storage-blob": "^12.8.0"
   },
   "strapi": {
     "isProvider": true
@@ -21,6 +21,7 @@
     "strapi"
   ],
   "devDependencies": {
-    "eslint": "^6.8.0"
+    "eslint": "^6.8.0",
+    "typescript": "^4.5.2"
   }
 }
