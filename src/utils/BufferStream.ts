@@ -1,6 +1,7 @@
 import stream from 'stream';
 
-class BufferStream extends stream.Readable {
+// <snippet_BufferStream>
+export class BufferStream extends stream.Readable {
     private _source: Buffer|null
     private _offset: number|null
     private _length: number|null
@@ -37,6 +38,3 @@ class BufferStream extends stream.Readable {
         this._length = null;
     }
 }
-
-
-export { BufferStream }
