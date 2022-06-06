@@ -55,6 +55,34 @@ module.exports = ({ env }) => ({
 });
 ```
 
+#### Security Middleware Configuration
+
+The default settings in the Strapi Security Middleware block all but local content (you will see `(blocked:csp)` on media requests in the network tab), you will need to modify the contentSecurityPolicy settings to allow loading of thumbnail previews in the admin panel.
+
+To allow the azure storage content to be displayed, edit the file at ```./config/middlewares.js```.
+You should replace the `strapi::security` string with the object below instead, see the [Middlewares configuration](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/required/middlewares.html) documentation for more details.
+
+```js
+module.exports = [
+  // ...
+  {
+    name: 'strapi::security',
+    config: {
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: {
+          'connect-src': ["'self'", 'https:'],
+          'img-src': ["'self'", 'data:', 'blob:', env('STORAGE_URL'), env('STORAGE_CDN_URL')],
+          'media-src': ["'self'", 'data:', 'blob:', env('STORAGE_URL'), env('STORAGE_CDN_URL')],
+          upgradeInsecureRequests: null,
+        },
+      },
+    },
+  },
+  // ...
+];
+```
+
 ### Strapi version >= 3.0.0 & < 4.0.0
 
 With a stable release of Strapi 3.0.0, the configuration was moved to a JavaScript file. Official documentation.
