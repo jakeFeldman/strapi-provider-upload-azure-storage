@@ -83,6 +83,77 @@ module.exports = [
 ];
 ```
 
+#### Additional image formats
+
+This plugin can create additional image formats on upload. Additional images are uploaded side-by-side to the original format.
+
+If enabled, additional urls are included in the API response.
+The new urls are only added to `image.attributes.formats` and in `image.attributes.provider_metadata` for the original image.
+
+```json
+{
+  "id": 15,
+  "attributes": {
+    "name": "image.jpg",
+    "provider_metadata": {
+      "webpUrl": "https://cdn.example.com/image_a62eb06604.webp",
+      "avifUrl": "https://cdn.example.com/image_a62eb06604.avif"
+    },
+    ...
+    "formats": {
+      "thumbnail": {
+        ...
+        "url": "https://cdn.example.com/image_04cee326c9.jpg",
+        "webpUrl": "https://cdn.example.com/image_04cee326c9.webp",
+        "avifUrl": "https://cdn.example.com/image_04cee326c9.avif"
+      },
+      "small": {
+        ...
+        "url": "https://cdn.example.com/image_04cee326c9.jpg",
+        "webpUrl": "https://cdn.example.com/image_04cee326c9.webp",
+        "avifUrl": "https://cdn.example.com/image_04cee326c9.avif"
+      }
+    }
+  }
+}
+
+```
+
+##### WebP
+The WebP image format can be enabled via the `config.webp` setting. We are using sharp for converting the image. Additional options can be passed to sharp through `config.webpOptions`. For all options see the [sharp documentation](https://sharp.pixelplumbing.com/api-output#webp)
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        ...
+        webp: true
+        webpOptions: { ... } 
+      }
+    }
+  }
+});
+```
+
+##### AVIF
+The AVIF image format can be enabled via the `config.avif` setting. We are using sharp for converting the image. Additional options can be passed to sharp through `config.avifOptions`. For all options see the [sharp documentation](https://sharp.pixelplumbing.com/api-output#avif)
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        ...
+        avif: true
+        avifOptions: { ... } 
+      }
+    }
+  }
+});
+```
+
+
 ### Strapi version >= 3.0.0 & < 4.0.0
 
 With a stable release of Strapi 3.0.0, the configuration was moved to a JavaScript file. Official documentation.
@@ -111,6 +182,7 @@ module.exports = ({ env }) => ({
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
 
 `cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
+
 
 ## Contributing
 
