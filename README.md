@@ -72,8 +72,8 @@ module.exports = [
         useDefaults: true,
         directives: {
           'connect-src': ["'self'", 'https:'],
-          'img-src': ["'self'", 'data:', 'blob:', env('STORAGE_URL'), env('STORAGE_CDN_URL')],
-          'media-src': ["'self'", 'data:', 'blob:', env('STORAGE_URL'), env('STORAGE_CDN_URL')],
+          'img-src': ["'self'", 'data:', 'blob:', process.env.STORAGE_URL, process.env.STORAGE_CDN_URL],
+          'media-src': ["'self'", 'data:', 'blob:', process.env.STORAGE_URL, process.env.STORAGE_CDN_URL],
           upgradeInsecureRequests: null,
         },
       },
@@ -82,6 +82,7 @@ module.exports = [
   // ...
 ];
 ```
+Notice that `STORAGE_URL` environment variable has to be set for these settings to work. When you are not using CDN in front of your storage account, you can omit `process.env.STORAGE_CDN_URL` from the example above.
 
 ### Strapi version >= 3.0.0 & < 4.0.0
 
