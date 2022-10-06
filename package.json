@@ -7,7 +7,7 @@
     "lib": "./lib"
   },
   "dependencies": {
-    "@azure/storage-blob": "^10.5.0"
+    "@azure/storage-blob": "^12.11.0"
   },
   "strapi": {
     "isProvider": true
