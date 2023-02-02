@@ -10,9 +10,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 ### Prerequisites
 
-* Node 10+
-* npm 6+
-* strapi@3.0.0-beta.16+
+- strapi@4.0.0+
 
 ### Installing
 
@@ -28,52 +26,70 @@ npm install strapi-provider-upload-azure-storage
 
 ## Usage
 
+To enable the provider, create or edit the file at `./config/plugins.js`.
 
-### Strapi version >= 4.0.0
+This is an example `plugins.js` file for Azure storage:
 
-With a stable release of Strapi 4.0.0, the configuration was moved to a JavaScript file. Official documentation [here](https://strapi.io/documentation/developer-docs/latest/development/plugins/upload.html#using-a-provider).
-
-To enable the provider, create or edit the file at ```./config/plugins.js```.
-
-This is an example plugins.js file for Azure storage:
 ```js
 module.exports = ({ env }) => ({
   upload: {
     config: {
-      provider: 'strapi-provider-upload-azure-storage',
+      provider: "strapi-provider-upload-azure-storage",
       providerOptions: {
-        account: env('STORAGE_ACCOUNT'),
-        accountKey: env('STORAGE_ACCOUNT_KEY'),
-        serviceBaseURL: env('STORAGE_URL'),
-        containerName: env('STORAGE_CONTAINER_NAME'),
-        cdnBaseURL: env('STORAGE_CDN_URL'),
-        defaultPath: 'assets',
-        maxConcurrent: 10
-      }
-    }
-  }
+        account: env("STORAGE_ACCOUNT"),
+        accountKey: env("STORAGE_ACCOUNT_KEY"),
+        serviceBaseURL: env("STORAGE_URL"), // optional
+        containerName: env("STORAGE_CONTAINER_NAME"),
+        cdnBaseURL: env("STORAGE_CDN_URL"), // optional
+        defaultPath: "assets",
+      },
+    },
+  },
 });
 ```
 
-#### Security Middleware Configuration
+### Security Middleware Configuration
 
-The default settings in the Strapi Security Middleware block all but local content (you will see `(blocked:csp)` on media requests in the network tab), you will need to modify the contentSecurityPolicy settings to allow loading of thumbnail previews in the admin panel.
+Due to the default settings in the Strapi Security Middleware you will need to modify the contentSecurityPolicy settings to properly see thumbnail previews in the Media Library. You should replace strapi::security string with the object bellow instead as explained in the middleware configuration documentation.
 
-To allow the azure storage content to be displayed, edit the file at ```./config/middlewares.js```.
+To allow the azure storage content to be displayed, edit the file at `./config/middlewares.js`.
 You should replace the `strapi::security` string with the object below instead, see the [Middlewares configuration](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/required/middlewares.html) documentation for more details.
+
+`./config/middlewares.js`
 
 ```js
 module.exports = [
   // ...
   {
-    name: 'strapi::security',
+    name: "strapi::security",
     config: {
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
-          'connect-src': ["'self'", 'https:'],
-          'img-src': ["'self'", 'data:', 'blob:', process.env.STORAGE_URL, process.env.STORAGE_CDN_URL],
-          'media-src': ["'self'", 'data:', 'blob:', process.env.STORAGE_URL, process.env.STORAGE_CDN_URL],
+          "connect-src": ["'self'", "https:"],
+          "img-src": [
+            "'self'",
+            "data:",
+            "blob:",
+            "dl.airtable.com",
+            /**
+             * Note: If using a STORAGE_URL replace `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net` w/ process.env.STORAGE_URL
+             * If using a CDN URL make sure to include that url in the CSP headers process.env.STORAGE_CDN_URL
+             */
+            `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net`,
+          ],
+          "media-src": [
+            "'self'",
+            "data:",
+            "blob:",
+            "dl.airtable.com",
+            /**
+             * Note: If using a STORAGE_URL replace `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net` w/ process.env.STORAGE_URL
+             * If using a CDN URL make sure to include that url in the CSP headers process.env.STORAGE_CDN_URL
+             */
+            `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net`,
+
+          ],
           upgradeInsecureRequests: null,
         },
       },
@@ -82,36 +98,12 @@ module.exports = [
   // ...
 ];
 ```
-Notice that `STORAGE_URL` environment variable has to be set for these settings to work. When you are not using CDN in front of your storage account, you can omit `process.env.STORAGE_CDN_URL` from the example above.
-
-### Strapi version >= 3.0.0 & < 4.0.0
-
-With a stable release of Strapi 3.0.0, the configuration was moved to a JavaScript file. Official documentation.
-
-To enable the provider, create or edit the file at ```./config/plugins.js```.
-
-This is an example plugins.js file for Azure storage:
-```js
-module.exports = ({ env }) => ({
-  upload: {
-    provider: 'azure-storage',
-    providerOptions: {
-      account: env('STORAGE_ACCOUNT'),
-      accountKey: env('STORAGE_ACCOUNT_KEY'),
-      serviceBaseURL: env('STORAGE_URL'),
-      containerName: env('STORAGE_CONTAINER_NAME'),
-      cdnBaseURL: env('STORAGE_CDN_URL'),
-      defaultPath: 'assets',
-      maxConcurrent: 10
-    }
-  }
-});
-```
 
 `serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [Azurite](https://github.com/Azure/Azurite/). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
 
 `cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
+
 
 ## Contributing
 
