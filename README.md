@@ -40,13 +40,22 @@ module.exports = ({ env }) => ({
         accountKey: env("STORAGE_ACCOUNT_KEY"),
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
-        cdnBaseURL: env("STORAGE_CDN_URL"), // optional
         defaultPath: "assets",
+        cdnBaseURL: env("STORAGE_CDN_URL"), // optional
       },
     },
   },
 });
 ```
+
+| Property | Required | Description |
+| -------- | -------- | -------- |
+| account | true | Azure account name |
+| accountKey | true | Secret access key |
+| serviceBaseURL  | false     | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
+| containerName  | true     | Container name |
+| defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |
+| cdnBaseURL  | false     | CDN base url |
 
 ### Security Middleware Configuration
 
@@ -99,11 +108,12 @@ module.exports = [
 ];
 ```
 
+
+
 `serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [Azurite](https://github.com/Azure/Azurite/). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
 
 `cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
-
 
 ## Contributing
 
