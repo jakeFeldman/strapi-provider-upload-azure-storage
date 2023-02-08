@@ -38,8 +38,3 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
-
-# Ignore npmrc
-.npmrc
-
-dist
