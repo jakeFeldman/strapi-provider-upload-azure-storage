@@ -15,21 +15,9 @@ module.exports = {
         ecmaVersion: 'latest',
         sourceType: 'module',
     },
-    plugins: [
-        '@typescript-eslint',
-        'simple-import-sort',
-        'unused-imports',
-        'prettier',
-    ],
+    plugins: ['@typescript-eslint', 'simple-import-sort', 'unused-imports', 'prettier'],
     rules: {
         '@typescript-eslint/no-unused-vars': 'off',
-        'react-hooks/rules-of-hooks': 'error',
-        'react-hooks/exhaustive-deps': [
-            'error',
-            {
-                additionalHooks: '(useRecoilCallback|useRecoilTransaction_UNSTABLE)',
-            },
-        ],
         'simple-import-sort/imports': [
             'error',
             {

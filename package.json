@@ -4,7 +4,7 @@
   "license": "MIT",
   "main": "./lib",
   "scripts": {
-    "lint": "eslint . --ext js"
+    "lint": "eslint . --ext .js,.ts"
   },
   "directories": {
     "lib": "./lib"
