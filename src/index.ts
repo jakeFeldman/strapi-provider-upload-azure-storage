@@ -45,38 +45,40 @@ const uploadOptions = {
     maxBuffers: 20,
 };
 
-function handleUpload(config: Config, blobSvcClient: BlobServiceClient, file: StrapiFile) {
-    return async () => {
-        const serviceBaseURL = getServiceBaseUrl(config);
-        const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-        const client = containerClient.getBlockBlobClient(
-            `${trimParam(config.defaultPath)}/${file.hash}`
-        );
-        const options = {
-            blobHTTPHeaders: { blobContentType: file.mime },
-        };
-
-        const cdnBaseURL = trimParam(config.cdnBaseURL);
-        file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
-
-        await client.uploadStream(
-            file.stream,
-            uploadOptions.bufferSize,
-            uploadOptions.maxBuffers,
-            options
-        );
+async function handleUpload(
+    config: Config,
+    blobSvcClient: BlobServiceClient,
+    file: StrapiFile
+): Promise<void> {
+    const serviceBaseURL = getServiceBaseUrl(config);
+    const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
+    const client = containerClient.getBlockBlobClient(
+        `${trimParam(config.defaultPath)}/${file.hash}`
+    );
+    const options = {
+        blobHTTPHeaders: { blobContentType: file.mime },
     };
+
+    const cdnBaseURL = trimParam(config.cdnBaseURL);
+    file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
+
+    await client.uploadStream(
+        file.stream,
+        uploadOptions.bufferSize,
+        uploadOptions.maxBuffers,
+        options
+    );
 }
 
-function handleDelete(config: Config, blobSvcClient: BlobServiceClient, file: StrapiFile) {
-    return async () => {
-        const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-        const client = containerClient.getBlobClient(
-            `${trimParam(config.defaultPath)}/${file.hash}`
-        );
-        await client.delete();
-        file.url = client.url;
-    };
+async function handleDelete(
+    config: Config,
+    blobSvcClient: BlobServiceClient,
+    file: StrapiFile
+): Promise<void> {
+    const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
+    const client = containerClient.getBlobClient(`${trimParam(config.defaultPath)}/${file.hash}`);
+    await client.delete();
+    file.url = client.url;
 }
 
 module.exports = {
