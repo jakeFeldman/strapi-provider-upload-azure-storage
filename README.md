@@ -31,13 +31,15 @@ To enable the provider, create or edit the file at `./config/plugins.js`.
 This is an example `plugins.js` file for Azure storage:
 
 ```js
+
 module.exports = ({ env }) => ({
   upload: {
     config: {
       provider: "strapi-provider-upload-azure-storage",
       providerOptions: {
         account: env("STORAGE_ACCOUNT"),
-        accountKey: env("STORAGE_ACCOUNT_KEY"),
+        accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
+        accountKey: env("STORAGE_ACCOUNT_SAS_TOKEN"),
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
@@ -46,6 +48,7 @@ module.exports = ({ env }) => ({
     },
   },
 });
+
 ```
 
 | Property | Required | Description |
