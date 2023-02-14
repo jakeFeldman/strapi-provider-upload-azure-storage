@@ -39,7 +39,7 @@ module.exports = ({ env }) => ({
       providerOptions: {
         account: env("STORAGE_ACCOUNT"),
         accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
-        accountKey: env("STORAGE_ACCOUNT_SAS_TOKEN"),
+        sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
@@ -55,6 +55,7 @@ module.exports = ({ env }) => ({
 | -------- | -------- | -------- |
 | account | true | Azure account name |
 | accountKey | true | Secret access key |
+| sasToken   | false | SAS Token, either accountKey or SASToken is required |
 | serviceBaseURL  | false     | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
 | containerName  | true     | Container name |
 | defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |

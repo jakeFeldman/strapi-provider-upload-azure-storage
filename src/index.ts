@@ -4,7 +4,7 @@ import internal from 'stream';
 type Config = {
     account: string;
     accountKey: string;
-    sastoken: string;
+    sasToken: string;
     serviceBaseURL?: string;
     containerName: string;
     defaultPath: string;
@@ -31,27 +31,19 @@ function getServiceBaseUrl(config: Config) {
     );
 }
 
-
 function makeBlobServiceClient(config: Config) {
     const account = trimParam(config.account);
     const accountKey = trimParam(config.accountKey);
-    const sasToken=trimParam(config.sastoken)
-    
+    const sasToken = trimParam(config.sasToken);
     const serviceBaseURL = getServiceBaseUrl(config);
-    //if accountKey doesnot contain value return below line
-    if(sasToken!=''){
-    const blobServiceClient = BlobServiceClient.fromConnectionString(`${serviceBaseURL}?${sasToken}`);
-    return blobServiceClient;
+    //if accountKey doesn't contain value return below line
+    if (sasToken != '') {
+        return BlobServiceClient.fromConnectionString(`${serviceBaseURL}?${sasToken}`);
     }
-
     const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
     const pipeline = newPipeline(sharedKeyCredential);
     return new BlobServiceClient(serviceBaseURL, pipeline);
 }
-
-
-
-
 
 const uploadOptions = {
     bufferSize: 4 * 1024 * 1024, // 4MB
