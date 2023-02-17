@@ -30,6 +30,10 @@ function getServiceBaseUrl(config: Config) {
     );
 }
 
+function getFileName(path: string, file: StrapiFile) {
+    return `${trimParam(path)}/${file.hash}${file.ext}`;
+}
+
 function makeBlobServiceClient(config: Config) {
     const account = trimParam(config.account);
     const accountKey = trimParam(config.accountKey);
@@ -52,9 +56,7 @@ async function handleUpload(
 ): Promise<void> {
     const serviceBaseURL = getServiceBaseUrl(config);
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-    const client = containerClient.getBlockBlobClient(
-        `${trimParam(config.defaultPath)}/${file.hash}`
-    );
+    const client = containerClient.getBlockBlobClient(getFileName(config.defaultPath, file));
     const options = {
         blobHTTPHeaders: { blobContentType: file.mime },
     };
@@ -76,7 +78,7 @@ async function handleDelete(
     file: StrapiFile
 ): Promise<void> {
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-    const client = containerClient.getBlobClient(`${trimParam(config.defaultPath)}/${file.hash}`);
+    const client = containerClient.getBlobClient(getFileName(config.defaultPath, file));
     await client.delete();
     file.url = client.url;
 }
