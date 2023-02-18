@@ -38,7 +38,7 @@ function makeBlobServiceClient(config: Config) {
     const serviceBaseURL = getServiceBaseUrl(config);
     //if accountKey doesn't contain value return below line
     if (sasToken != '') {
-        return BlobServiceClient.fromConnectionString(`${serviceBaseURL}?${sasToken}`);
+        return BlobServiceClient(`${serviceBaseURL}${sasToken}`);
     }
     const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
     const pipeline = newPipeline(sharedKeyCredential);
