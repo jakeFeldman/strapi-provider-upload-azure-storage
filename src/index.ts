@@ -1,4 +1,9 @@
-import { BlobServiceClient, newPipeline, StorageSharedKeyCredential } from '@azure/storage-blob';
+import {
+    AnonymousCredential,
+    BlobServiceClient,
+    newPipeline,
+    StorageSharedKeyCredential,
+} from '@azure/storage-blob';
 import internal from 'stream';
 
 type Config = {
@@ -40,9 +45,10 @@ function makeBlobServiceClient(config: Config) {
     const accountKey = trimParam(config.accountKey);
     const sasToken = trimParam(config.sasToken);
     const serviceBaseURL = getServiceBaseUrl(config);
-    //if accountKey doesn't contain value return below line
+    // if accountKey doesn't contain value return below line
     if (sasToken != '') {
-        return BlobServiceClient(`${serviceBaseURL}${sasToken}`);
+        const anonymousCredential = new AnonymousCredential();
+        return new BlobServiceClient(`${serviceBaseURL}${sasToken}`, anonymousCredential);
     }
     const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
     const pipeline = newPipeline(sharedKeyCredential);
