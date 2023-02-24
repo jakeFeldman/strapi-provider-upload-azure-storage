@@ -4,6 +4,7 @@ import internal from 'stream';
 type Config = {
     account: string;
     accountKey: string;
+    sasToken: string;
     serviceBaseURL?: string;
     containerName: string;
     defaultPath: string;
@@ -37,8 +38,12 @@ function getFileName(path: string, file: StrapiFile) {
 function makeBlobServiceClient(config: Config) {
     const account = trimParam(config.account);
     const accountKey = trimParam(config.accountKey);
+    const sasToken = trimParam(config.sasToken);
     const serviceBaseURL = getServiceBaseUrl(config);
-
+    //if accountKey doesn't contain value return below line
+    if (sasToken != '') {
+        return BlobServiceClient(`${serviceBaseURL}${sasToken}`);
+    }
     const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
     const pipeline = newPipeline(sharedKeyCredential);
     return new BlobServiceClient(serviceBaseURL, pipeline);
