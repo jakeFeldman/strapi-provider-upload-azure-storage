@@ -88,6 +88,7 @@ module.exports = [
             /**
              * Note: If using a STORAGE_URL replace `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net` w/ process.env.STORAGE_URL
              * If using a CDN URL make sure to include that url in the CSP headers process.env.STORAGE_CDN_URL
+             * If using Azurite, add the Blob Service base URL here, e.g. http://localhost:10000 
              */
             `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net`,
           ],
@@ -99,6 +100,7 @@ module.exports = [
             /**
              * Note: If using a STORAGE_URL replace `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net` w/ process.env.STORAGE_URL
              * If using a CDN URL make sure to include that url in the CSP headers process.env.STORAGE_CDN_URL
+             * If using Azurite, add the Blob Service base URL here, e.g. http://localhost:10000 
              */
             `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net`,
 
