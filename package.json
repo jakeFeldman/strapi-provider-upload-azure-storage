@@ -1,6 +1,6 @@
 {
   "name": "strapi-provider-upload-azure-storage",
-  "version": "3.1.3",
+  "version": "3.1.4",
   "license": "MIT",
   "main": "dist/index.js",
   "scripts": {
@@ -13,7 +13,8 @@
     "lib": "./lib"
   },
   "dependencies": {
-    "@azure/storage-blob": "^12.12.0"
+    "@azure/storage-blob": "^12.12.0",
+    "@azure/identity": "^3.1.3"
   },
   "strapi": {
     "isProvider": true

@@ -4,12 +4,16 @@ import {
     newPipeline,
     StorageSharedKeyCredential,
 } from '@azure/storage-blob';
+import {
+    DefaultAzureCredential,
+} from '@azure/identity';
 import internal from 'stream';
 
 type Config = {
     account: string;
-    accountKey: string;
-    sasToken: string;
+    accountKey?: string;
+    sasToken?: string;
+    managedIdentity?: string;
     serviceBaseURL?: string;
     containerName: string;
     defaultPath: string;
@@ -45,11 +49,20 @@ function makeBlobServiceClient(config: Config) {
     const accountKey = trimParam(config.accountKey);
     const sasToken = trimParam(config.sasToken);
     const serviceBaseURL = getServiceBaseUrl(config);
-    // if accountKey doesn't contain value return below line
+    const managedIdentity = trimParam(config.managedIdentity);
+    // if sasToken contains value, it is used as credential
     if (sasToken != '') {
         const anonymousCredential = new AnonymousCredential();
         return new BlobServiceClient(`${serviceBaseURL}${sasToken}`, anonymousCredential);
     }
+    // if managedIdentity contains value, it is used as credential
+    if (managedIdentity != '') {
+        const aadCredential = new DefaultAzureCredential({
+            managedIdentityClientId: managedIdentity
+        });
+        return new BlobServiceClient(serviceBaseURL, aadCredential);
+    }
+    // else, account & accountKey is used as credentials
     const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
     const pipeline = newPipeline(sharedKeyCredential);
     return new BlobServiceClient(serviceBaseURL, pipeline);
@@ -102,7 +115,15 @@ module.exports = {
             type: 'text',
         },
         accountKey: {
-            label: 'Secret access key (required)',
+            label: 'Secret access key (conditional, required when authentication based on shared key is configured)',
+            type: 'text',
+        },
+        sasToken: {
+            label: 'SAS token (conditional, required when authentication based on SAS is configured)',
+            type: 'text',
+        },
+        managedIdentity: {
+            label: 'Managed Identity Client ID (conditional, required when authentication based on Managed Identity is configured)',
             type: 'text',
         },
         serviceBaseURL: {

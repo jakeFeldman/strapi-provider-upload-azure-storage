@@ -38,8 +38,9 @@ module.exports = ({ env }) => ({
       provider: "strapi-provider-upload-azure-storage",
       providerOptions: {
         account: env("STORAGE_ACCOUNT"),
-        accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
+        accountKey: env("STORAGE_ACCOUNT_KEY"),//either accountKey, sasToken or managedIdentity is enough to make authentication 
         sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
+        managedIdentity: env("MANAGED_IDENTITY"),
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
@@ -54,8 +55,9 @@ module.exports = ({ env }) => ({
 | Property | Required | Description |
 | -------- | -------- | -------- |
 | account | true | Azure account name |
-| accountKey | true | Secret access key |
-| sasToken   | false | SAS Token, either accountKey or SASToken is required |
+| accountKey | false | Secret access key, either accountKey, sasToken or managedIdentity is required |
+| sasToken   | false | SAS Token, either accountKey, sasToken or managedIdentity is required |
+| managedIdentity | false | Managed Identity Client ID, either accountKey, sasToken or managedIdentity is required |
 | serviceBaseURL  | false     | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
 | containerName  | true     | Container name |
 | defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |
