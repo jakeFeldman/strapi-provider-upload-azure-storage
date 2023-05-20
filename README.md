@@ -44,6 +44,7 @@ module.exports = ({ env }) => ({
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
         cdnBaseURL: env("STORAGE_CDN_URL"), // optional
+        defaultCacheControl: env("STORAGE_CACHE_CONTROL") // optional
       },
     },
   },
@@ -60,6 +61,7 @@ module.exports = ({ env }) => ({
 | containerName  | true     | Container name |
 | defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |
 | cdnBaseURL  | false     | CDN base url |
+| defaultCacheControl  | false     | Cache-Control header value for all uploaded files |
 
 ### Security Middleware Configuration
 
@@ -119,6 +121,9 @@ module.exports = [
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
 
 `cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
+
+`defaultCacheControl` is optional. It is useful when you want to allow clients to use a cached version of the file. Azure storage will return this value in the [`Cache-Control` HTTP-header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control?retiredLocale=de) of the response. 
+
 
 ## Contributing
 

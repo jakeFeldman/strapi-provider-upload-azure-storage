@@ -14,6 +14,7 @@ type Config = {
     containerName: string;
     defaultPath: string;
     cdnBaseURL?: string;
+    defaultCacheControl?: string;
 };
 
 type StrapiFile = File & {
@@ -69,7 +70,10 @@ async function handleUpload(
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
     const client = containerClient.getBlockBlobClient(getFileName(config.defaultPath, file));
     const options = {
-        blobHTTPHeaders: { blobContentType: file.mime },
+        blobHTTPHeaders: { 
+            blobContentType: file.mime,
+            blobCacheControl: trimParam(config.defaultCacheControl)
+        },
     };
 
     const cdnBaseURL = trimParam(config.cdnBaseURL);
@@ -119,6 +123,10 @@ module.exports = {
         },
         cdnBaseURL: {
             label: 'CDN base url (optional)',
+            type: 'text',
+        },
+        defaultCacheControl: {
+            label: 'Default cache-control setting for all uploaded files',
             type: 'text',
         },
     },
