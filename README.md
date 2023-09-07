@@ -1,3 +1,7 @@
+# Looking for additional maintainer
+
+If you're interesting in helping maintain the package please shoot me a message. Thanks - Jake
+
 # Strapi Provider Upload Azure Storage
 
 Plugin enabling image uploading to azure storage from strapi.
