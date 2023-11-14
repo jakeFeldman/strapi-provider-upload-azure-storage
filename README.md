@@ -48,7 +48,8 @@ module.exports = ({ env }) => ({
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
         cdnBaseURL: env("STORAGE_CDN_URL"), // optional
-        defaultCacheControl: env("STORAGE_CACHE_CONTROL") // optional
+        defaultCacheControl: env("STORAGE_CACHE_CONTROL"), // optional
+        removeCN: env("REMOVE_CONTAINER_NAME"), // optional, if you want to remove container name from the URL 
       },
     },
   },
@@ -66,6 +67,7 @@ module.exports = ({ env }) => ({
 | defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |
 | cdnBaseURL  | false     | CDN base url |
 | defaultCacheControl  | false     | Cache-Control header value for all uploaded files |
+| removeCN  | false     | Set to true, to remove container name from azure URL |
 
 ### Security Middleware Configuration
 
@@ -128,6 +130,7 @@ When `serviceBaseURL` is not provided, default `https://${account}.blob.core.win
 
 `defaultCacheControl` is optional. It is useful when you want to allow clients to use a cached version of the file. Azure storage will return this value in the [`Cache-Control` HTTP-header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control?retiredLocale=de) of the response. 
 
+`removeCN` is optional. Some azure account configurations are such that they exclude 'container name' from the URL at which data is saved. It is by default set to false, if you want to remove container name from URL, set it to 'true'.
 
 ## Contributing
 
