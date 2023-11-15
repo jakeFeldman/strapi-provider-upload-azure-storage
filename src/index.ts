@@ -79,8 +79,8 @@ async function handleUpload(
 
     const cdnBaseURL = trimParam(config.cdnBaseURL);
     file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
-    if (file.url.includes('/'+config.containerName+'/') && config.removeCN && config.removeCN=='true') {
-        file.url = file.url.replace('/'+config.containerName+'/', '/');
+    if (file.url.includes(`/${config.containerName}/`) && config.removeCN && config.removeCN=='true') {
+        file.url = file.url.replace(`/${config.containerName}/`, '/');
     }
 
     await client.uploadStream(
