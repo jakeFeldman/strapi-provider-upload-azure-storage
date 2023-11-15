@@ -15,7 +15,7 @@ type Config = {
     defaultPath: string;
     cdnBaseURL?: string;
     defaultCacheControl?: string;
-    removeCN?: string; 
+    removeCN?: string;
 };
 
 type StrapiFile = File & {
@@ -71,15 +71,19 @@ async function handleUpload(
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
     const client = containerClient.getBlockBlobClient(getFileName(config.defaultPath, file));
     const options = {
-        blobHTTPHeaders: { 
+        blobHTTPHeaders: {
             blobContentType: file.mime,
-            blobCacheControl: trimParam(config.defaultCacheControl)
+            blobCacheControl: trimParam(config.defaultCacheControl),
         },
     };
 
     const cdnBaseURL = trimParam(config.cdnBaseURL);
     file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
-    if (file.url.includes(`/${config.containerName}/`) && config.removeCN && config.removeCN=='true') {
+    if (
+        file.url.includes(`/${config.containerName}/`) &&
+        config.removeCN &&
+        config.removeCN == 'true'
+    ) {
         file.url = file.url.replace(`/${config.containerName}/`, '/');
     }
 
@@ -136,7 +140,7 @@ module.exports = {
         removeCN: {
             label: 'Remove container name from URL (optional)',
             type: 'text',
-        }
+        },
     },
     init: (config: Config) => {
         const blobSvcClient = makeBlobServiceClient(config);
