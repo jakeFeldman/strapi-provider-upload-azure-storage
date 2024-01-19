@@ -35,15 +35,35 @@ To enable the provider, create or edit the file at `./config/plugins.js`.
 This is an example `plugins.js` file for Azure storage:
 
 ```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: "strapi-provider-upload-azure-storage",
+      providerOptions: {
+        auth_type: env("STORAGE_AUTH_TYPE", "default"),
+        account: env("STORAGE_ACCOUNT"),
+        accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
+        sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
+        serviceBaseURL: env("STORAGE_URL"), // optional
+        containerName: env("STORAGE_CONTAINER_NAME"),
+        defaultPath: "assets",
+        cdnBaseURL: env("STORAGE_CDN_URL"), // optional
+        defaultCacheControl: env("STORAGE_CACHE_CONTROL"), // optional
+        removeCN: env("REMOVE_CONTAINER_NAME"), // optional, if you want to remove container name from the URL 
+      },
+    },
+  },
+});
+
+// For using azure identities, the correct auth_type is 'msi' or (provide it in the environment variable)
 
 module.exports = ({ env }) => ({
   upload: {
     config: {
       provider: "strapi-provider-upload-azure-storage",
       providerOptions: {
+        auth_type: 'msi',
         account: env("STORAGE_ACCOUNT"),
-        accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
-        sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
@@ -59,9 +79,10 @@ module.exports = ({ env }) => ({
 
 | Property | Required | Description |
 | -------- | -------- | -------- |
+| auth_type | true | Whether to use a SAS key ("default") or an identity ("msi") |
 | account | true | Azure account name |
-| accountKey | true | Secret access key |
-| sasToken   | false | SAS Token, either accountKey or SASToken is required |
+| accountKey | if 'auth_type 'default' | Secret access key |
+| sasToken   | false | SAS Token, either accountKey or SASToken is required if 'auth_type is 'default' |
 | serviceBaseURL  | false     | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
 | containerName  | true     | Container name |
 | defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |

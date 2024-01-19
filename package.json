@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "lint": "eslint . --ext .js,.ts",
+    "lint:fix": "eslint . --ext .js,.ts --fix",
     "prebuild": "rm -rf dist",
     "prepublishOnly": "yarn build"
   },
@@ -13,6 +14,7 @@
     "lib": "./lib"
   },
   "dependencies": {
+    "@azure/identity": "^4.0.0",
     "@azure/storage-blob": "^12.12.0"
   },
   "strapi": {
