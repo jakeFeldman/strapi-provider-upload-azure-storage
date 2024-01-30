@@ -40,7 +40,7 @@ module.exports = ({ env }) => ({
     config: {
       provider: "strapi-provider-upload-azure-storage",
       providerOptions: {
-        auth_type: env("STORAGE_AUTH_TYPE", "default"),
+        authType: env("STORAGE_AUTH_TYPE", "default"),
         account: env("STORAGE_ACCOUNT"),
         accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
         sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
@@ -55,15 +55,16 @@ module.exports = ({ env }) => ({
   },
 });
 
-// For using azure identities, the correct auth_type is 'msi' or (provide it in the environment variable)
+// For using azure identities, the correct authType is 'msi' or (provide it in the environment variable)
 
 module.exports = ({ env }) => ({
   upload: {
     config: {
       provider: "strapi-provider-upload-azure-storage",
       providerOptions: {
-        auth_type: 'msi',
+        authType: 'msi',
         account: env("STORAGE_ACCOUNT"),
+        clientId: env("STORAGE_AZURE_CLIENT_ID"), // optional
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
         defaultPath: "assets",
@@ -77,18 +78,19 @@ module.exports = ({ env }) => ({
 
 ```
 
-| Property | Required | Description |
-| -------- | -------- | -------- |
-| auth_type | true | Whether to use a SAS key ("default") or an identity ("msi") |
-| account | true | Azure account name |
-| accountKey | if 'auth_type 'default' | Secret access key |
-| sasToken   | false | SAS Token, either accountKey or SASToken is required if 'auth_type is 'default' |
-| serviceBaseURL  | false     | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
-| containerName  | true     | Container name |
-| defaultPath  | true     | The path to use when there is none being specified. Defaults to `assets` |
-| cdnBaseURL  | false     | CDN base url |
-| defaultCacheControl  | false     | Cache-Control header value for all uploaded files |
-| removeCN  | false     | Set to true, to remove container name from azure URL |
+| Property            | Required                            | Description                                                                                   |
+| ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------- |
+| authType            | true                                | Whether to use a SAS key ("default") or an identity ("msi")                                   |
+| account             | true                                | Azure account name                                                                            |
+| accountKey          | if 'authType 'default'              | Secret access key                                                                             |
+| clientId            | false (consumed if 'authType 'msi') | Azure Identity Client ID                                                                      |
+| sasToken            | false                               | SAS Token, either accountKey or SASToken is required if 'authType is 'default'                |
+| serviceBaseURL      | false                               | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
+| containerName       | true                                | Container name                                                                                |
+| defaultPath         | true                                | The path to use when there is none being specified. Defaults to `assets`                      |
+| cdnBaseURL          | false                               | CDN base url                                                                                  |
+| defaultCacheControl | false                               | Cache-Control header value for all uploaded files                                             |
+| removeCN            | false                               | Set to true, to remove container name from azure URL                                          |
 
 ### Security Middleware Configuration
 

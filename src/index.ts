@@ -10,7 +10,7 @@ import internal from 'stream';
 type Config = DefaultConfig | ManagedIdentityConfig;
 
 type DefaultConfig = {
-    auth_type: 'default';
+    authType: 'default';
     accountKey: string;
     sasToken: string;
     account: string;
@@ -23,7 +23,8 @@ type DefaultConfig = {
 };
 
 type ManagedIdentityConfig = {
-    auth_type: 'msi';
+    authType: 'msi';
+    clientId?: string;
     account: string;
     serviceBaseURL?: string;
     containerName: string;
@@ -60,8 +61,8 @@ function getFileName(path: string, file: StrapiFile) {
 function makeBlobServiceClient(config: Config) {
     const serviceBaseURL = getServiceBaseUrl(config);
 
-    switch (config.auth_type) {
-        case 'default':
+    switch (config.authType) {
+        case 'default': {
             const account = trimParam(config.account);
             const accountKey = trimParam(config.accountKey);
             const sasToken = trimParam(config.sasToken);
@@ -72,9 +73,21 @@ function makeBlobServiceClient(config: Config) {
             const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
             const pipeline = newPipeline(sharedKeyCredential);
             return new BlobServiceClient(serviceBaseURL, pipeline);
-
-        case 'msi':
+        }
+        case 'msi': {
+            const clientId = trimParam(config.clientId);
+            if (clientId != null && clientId != '') {
+                return new BlobServiceClient(
+                    serviceBaseURL,
+                    new DefaultAzureCredential({ managedIdentityClientId: clientId })
+                );
+            }
             return new BlobServiceClient(serviceBaseURL, new DefaultAzureCredential());
+        }
+        default: {
+            const exhaustiveCheck: never = config;
+            throw new Error(exhaustiveCheck);
+        }
     }
 }
 
@@ -130,8 +143,12 @@ async function handleDelete(
 module.exports = {
     provider: 'azure',
     auth: {
-        auth_type: {
+        authType: {
             label: 'Authentication type (required, either "msi" or "default")',
+            type: 'text',
+        },
+        clientId: {
+            label: 'Azure Identity ClientId (consumed if authType is "msi" and passed as DefaultAzureCredential({ managedIdentityClientId: clientId }))',
             type: 'text',
         },
         account: {
@@ -139,7 +156,7 @@ module.exports = {
             type: 'text',
         },
         accountKey: {
-            label: 'Secret access key (required if auth_type is "default")',
+            label: 'Secret access key (required if authType is "default")',
             type: 'text',
         },
         serviceBaseURL: {

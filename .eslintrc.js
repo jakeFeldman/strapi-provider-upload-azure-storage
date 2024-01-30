@@ -27,7 +27,6 @@ module.exports = {
         'simple-import-sort/exports': 'error',
         'no-unused-vars': 'off',
         'unused-imports/no-unused-imports': 'error',
-        'no-case-declarations': 'off',
         'unused-imports/no-unused-vars': [
             'error',
             { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
