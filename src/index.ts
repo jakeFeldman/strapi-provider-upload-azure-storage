@@ -1,3 +1,4 @@
+import { DefaultAzureCredential } from '@azure/identity';
 import {
     AnonymousCredential,
     BlobServiceClient,
@@ -6,10 +7,25 @@ import {
 } from '@azure/storage-blob';
 import internal from 'stream';
 
-type Config = {
-    account: string;
+type Config = DefaultConfig | ManagedIdentityConfig;
+
+type DefaultConfig = {
+    authType: 'default';
     accountKey: string;
     sasToken: string;
+    account: string;
+    serviceBaseURL?: string;
+    containerName: string;
+    defaultPath: string;
+    cdnBaseURL?: string;
+    defaultCacheControl?: string;
+    removeCN?: string;
+};
+
+type ManagedIdentityConfig = {
+    authType: 'msi';
+    clientId?: string;
+    account: string;
     serviceBaseURL?: string;
     containerName: string;
     defaultPath: string;
@@ -43,18 +59,36 @@ function getFileName(path: string, file: StrapiFile) {
 }
 
 function makeBlobServiceClient(config: Config) {
-    const account = trimParam(config.account);
-    const accountKey = trimParam(config.accountKey);
-    const sasToken = trimParam(config.sasToken);
     const serviceBaseURL = getServiceBaseUrl(config);
-    // if accountKey doesn't contain value return below line
-    if (sasToken != '') {
-        const anonymousCredential = new AnonymousCredential();
-        return new BlobServiceClient(`${serviceBaseURL}${sasToken}`, anonymousCredential);
+
+    switch (config.authType) {
+        case 'default': {
+            const account = trimParam(config.account);
+            const accountKey = trimParam(config.accountKey);
+            const sasToken = trimParam(config.sasToken);
+            if (sasToken != '') {
+                const anonymousCredential = new AnonymousCredential();
+                return new BlobServiceClient(`${serviceBaseURL}${sasToken}`, anonymousCredential);
+            }
+            const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
+            const pipeline = newPipeline(sharedKeyCredential);
+            return new BlobServiceClient(serviceBaseURL, pipeline);
+        }
+        case 'msi': {
+            const clientId = trimParam(config.clientId);
+            if (clientId != null && clientId != '') {
+                return new BlobServiceClient(
+                    serviceBaseURL,
+                    new DefaultAzureCredential({ managedIdentityClientId: clientId })
+                );
+            }
+            return new BlobServiceClient(serviceBaseURL, new DefaultAzureCredential());
+        }
+        default: {
+            const exhaustiveCheck: never = config;
+            throw new Error(exhaustiveCheck);
+        }
     }
-    const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
-    const pipeline = newPipeline(sharedKeyCredential);
-    return new BlobServiceClient(serviceBaseURL, pipeline);
 }
 
 const uploadOptions = {
@@ -109,12 +143,20 @@ async function handleDelete(
 module.exports = {
     provider: 'azure',
     auth: {
+        authType: {
+            label: 'Authentication type (required, either "msi" or "default")',
+            type: 'text',
+        },
+        clientId: {
+            label: 'Azure Identity ClientId (consumed if authType is "msi" and passed as DefaultAzureCredential({ managedIdentityClientId: clientId }))',
+            type: 'text',
+        },
         account: {
             label: 'Account name (required)',
             type: 'text',
         },
         accountKey: {
-            label: 'Secret access key (required)',
+            label: 'Secret access key (required if authType is "default")',
             type: 'text',
         },
         serviceBaseURL: {
