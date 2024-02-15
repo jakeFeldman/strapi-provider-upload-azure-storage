@@ -46,6 +46,8 @@ module.exports = ({ env }) => ({
         sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
+        createContainerIfNotExist: env("STORAGE_CREATE_CONTAINER_IF_NOT_EXIST", 'false'), // optional
+        publicAccessType: env("STORAGE_PUBLIC_ACCESS_TYPE"), // optional ('blob' | 'container')
         defaultPath: "assets",
         cdnBaseURL: env("STORAGE_CDN_URL"), // optional
         defaultCacheControl: env("STORAGE_CACHE_CONTROL"), // optional
@@ -67,6 +69,8 @@ module.exports = ({ env }) => ({
         clientId: env("STORAGE_AZURE_CLIENT_ID"), // optional
         serviceBaseURL: env("STORAGE_URL"), // optional
         containerName: env("STORAGE_CONTAINER_NAME"),
+        createContainerIfNotExist: env("STORAGE_CREATE_CONTAINER_IF_NOT_EXIST", 'false'), // optional
+        publicAccessType: env("STORAGE_PUBLIC_ACCESS_TYPE"), // optional ('blob' | 'container')
         defaultPath: "assets",
         cdnBaseURL: env("STORAGE_CDN_URL"), // optional
         defaultCacheControl: env("STORAGE_CACHE_CONTROL"), // optional
@@ -78,19 +82,22 @@ module.exports = ({ env }) => ({
 
 ```
 
-| Property            | Required                            | Description                                                                                   |
-| ------------------- | ----------------------------------- | --------------------------------------------------------------------------------------------- |
-| authType            | true                                | Whether to use a SAS key ("default") or an identity ("msi")                                   |
-| account             | true                                | Azure account name                                                                            |
-| accountKey          | if 'authType 'default'              | Secret access key                                                                             |
-| clientId            | false (consumed if 'authType 'msi') | Azure Identity Client ID                                                                      |
-| sasToken            | false                               | SAS Token, either accountKey or SASToken is required if 'authType is 'default'                |
-| serviceBaseURL      | false                               | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
-| containerName       | true                                | Container name                                                                                |
-| defaultPath         | true                                | The path to use when there is none being specified. Defaults to `assets`                      |
-| cdnBaseURL          | false                               | CDN base url                                                                                  |
-| defaultCacheControl | false                               | Cache-Control header value for all uploaded files                                             |
-| removeCN            | false                               | Set to true, to remove container name from azure URL                                          |
+| Property                  | Required                                      | Description                                                                                   |
+| ------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| authType                  | true                                          | Whether to use a SAS key ("default") or an identity ("msi")                                   |
+| account                   | true                                          | Azure account name                                                                            |
+| accountKey                | if 'authType 'default'                        | Secret access key                                                                             |
+| clientId                  | false (consumed if 'authType 'msi')           | Azure Identity Client ID                                                                      |
+| sasToken                  | false                                         | SAS Token, either accountKey or SASToken is required if 'authType is 'default'                |
+| serviceBaseURL            | false                                         | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
+| containerName             | true                                          | Container name                                                                                |
+| createContainerIfNotExist | false                                         | Attempts to create the container if not existing. Must be one of 'true' or any string         |
+| publicAccessType          | false (param for 'createContainerIfNotExist') | Sets the public access of a newly created container to one of 'blob' or 'container'           |
+| defaultPath               | true                                          | The path to use when there is none being specified. Defaults to `assets`                      |
+| cdnBaseURL                | false                                         | CDN base url                                                                                  |
+| defaultCacheControl       | false                                         | Cache-Control header value for all uploaded files                                             |
+| removeCN                  | false                                         | Set to true, to remove container name from azure URL                                          |
+
 
 ### Security Middleware Configuration
 
@@ -144,10 +151,10 @@ module.exports = [
 ];
 ```
 
-
-
 `serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [Azurite](https://github.com/Azure/Azurite/). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
 When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
+
+`createContainerIfNotExist` can also be useful when working with [Azurite](https://github.com/Azure/Azurite/) as the tool provides very little by way of startup scripting.
 
 `cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
 
