@@ -3,6 +3,7 @@ import {
     AnonymousCredential,
     BlobServiceClient,
     newPipeline,
+    PublicAccessType,
     StorageSharedKeyCredential,
 } from '@azure/storage-blob';
 import internal from 'stream';
@@ -19,6 +20,8 @@ type DefaultConfig = {
     defaultPath: string;
     cdnBaseURL?: string;
     defaultCacheControl?: string;
+    createContainerIfNotExist?: string;
+    publicAccessType?: PublicAccessType;
     removeCN?: string;
 };
 
@@ -31,6 +34,8 @@ type ManagedIdentityConfig = {
     defaultPath: string;
     cdnBaseURL?: string;
     defaultCacheControl?: string;
+    createContainerIfNotExist?: string;
+    publicAccessType?: PublicAccessType;
     removeCN?: string;
 };
 
@@ -104,6 +109,18 @@ async function handleUpload(
     const serviceBaseURL = getServiceBaseUrl(config);
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
     const client = containerClient.getBlockBlobClient(getFileName(config.defaultPath, file));
+
+    if (trimParam(config?.createContainerIfNotExist) === 'true') {
+        if (
+            trimParam(config?.publicAccessType) === 'container' ||
+            trimParam(config?.publicAccessType) === 'blob'
+        ) {
+            await containerClient.createIfNotExists({ access: config.publicAccessType });
+        } else {
+            await containerClient.createIfNotExists();
+        }
+    }
+
     const options = {
         blobHTTPHeaders: {
             blobContentType: file.mime,
@@ -167,8 +184,12 @@ module.exports = {
             label: 'Container name (required)',
             type: 'text',
         },
-        defaultPath: {
-            label: 'The path to use when there is none being specified (required)',
+        createContainerIfNotExist: {
+            label: 'Create container on upload if it does not (optional)',
+            type: 'text',
+        },
+        publicAccessType: {
+            label: 'If createContainerIfNotExist is true, set the public access type to one of "blob" or "container" (optional)',
             type: 'text',
         },
         cdnBaseURL: {
