@@ -88,8 +88,7 @@ function makeBlobServiceClient(config: Config) {
             return new BlobServiceClient(serviceBaseURL, new DefaultAzureCredential());
         }
         default: {
-            const exhaustiveCheck: never = config;
-            throw new Error(exhaustiveCheck);
+            throw new Error('config.authType value is not supported');
         }
     }
 }
