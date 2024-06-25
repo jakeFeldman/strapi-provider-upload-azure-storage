@@ -8,35 +8,33 @@ import {
 } from '@azure/storage-blob';
 import internal from 'stream';
 
+type CommonConfig = {
+    account: string;
+    serviceBaseURL?: string;
+    containerName: string;
+    defaultPath: string;
+    cdnBaseURL?: string;
+    defaultCacheControl?: string;
+    createContainerIfNotExist?: string;
+    publicAccessType?: PublicAccessType;
+    removeCN?: string;
+    uploadOptions?: {
+        bufferSize: number;
+        maxBuffers: number,
+    };
+}
+
 type Config = DefaultConfig | ManagedIdentityConfig;
 
-type DefaultConfig = {
+type DefaultConfig = CommonConfig & {
     authType: 'default';
     accountKey: string;
     sasToken: string;
-    account: string;
-    serviceBaseURL?: string;
-    containerName: string;
-    defaultPath: string;
-    cdnBaseURL?: string;
-    defaultCacheControl?: string;
-    createContainerIfNotExist?: string;
-    publicAccessType?: PublicAccessType;
-    removeCN?: string;
 };
 
-type ManagedIdentityConfig = {
+type ManagedIdentityConfig = CommonConfig & {
     authType: 'msi';
     clientId?: string;
-    account: string;
-    serviceBaseURL?: string;
-    containerName: string;
-    defaultPath: string;
-    cdnBaseURL?: string;
-    defaultCacheControl?: string;
-    createContainerIfNotExist?: string;
-    publicAccessType?: PublicAccessType;
-    removeCN?: string;
 };
 
 type StrapiFile = File & {
@@ -96,7 +94,7 @@ function makeBlobServiceClient(config: Config) {
     }
 }
 
-const uploadOptions = {
+const uploadOptions: CommonConfig['uploadOptions'] = {
     bufferSize: 4 * 1024 * 1024, // 4MB
     maxBuffers: 20,
 };
@@ -140,8 +138,8 @@ async function handleUpload(
 
     await client.uploadStream(
         file.stream,
-        uploadOptions.bufferSize,
-        uploadOptions.maxBuffers,
+        (config.uploadOptions || uploadOptions).bufferSize,
+        (config.uploadOptions || uploadOptions).maxBuffers,
         options
     );
 }
