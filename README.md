@@ -58,6 +58,8 @@ module.exports = ({ env }) => ({
 });
 
 // For using azure identities, the correct authType is 'msi' or (provide it in the environment variable)
+// clientId is used for Azure User-Assigned Identity access. If not provided, system-assigned managed identity is used instead
+// RBAC Role Storage Blob Data Contributor required for MSI   
 
 module.exports = ({ env }) => ({
   upload: {
@@ -82,21 +84,21 @@ module.exports = ({ env }) => ({
 
 ```
 
-| Property                  | Required                                      | Description                                                                                   |
-| ------------------------- | --------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| authType                  | true                                          | Whether to use a SAS key ("default") or an identity ("msi")                                   |
-| account                   | true                                          | Azure account name                                                                            |
-| accountKey                | if 'authType 'default'                        | Secret access key                                                                             |
-| clientId                  | false (consumed if 'authType 'msi')           | Azure Identity Client ID                                                                      |
-| sasToken                  | false                                         | SAS Token, either accountKey or SASToken is required if 'authType is 'default'                |
-| serviceBaseURL            | false                                         | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net` |
-| containerName             | true                                          | Container name                                                                                |
-| createContainerIfNotExist | false                                         | Attempts to create the container if not existing. Must be one of 'true' or any string         |
-| publicAccessType          | false (param for 'createContainerIfNotExist') | Sets the public access of a newly created container to one of 'blob' or 'container'           |
-| defaultPath               | true                                          | The path to use when there is none being specified. Defaults to `assets`                      |
-| cdnBaseURL                | false                                         | CDN base url                                                                                  |
-| defaultCacheControl       | false                                         | Cache-Control header value for all uploaded files                                             |
-| removeCN                  | false                                         | Set to true, to remove container name from azure URL                                          |
+| Property                  | Required                                      | Description                                                                                           |
+| ------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------|
+| authType                  | true                                          | Whether to use a SAS key ("default") or an identity ("msi")                                           |
+| account                   | true                                          | Azure account name                                                                                    |
+| accountKey                | if 'authType 'default'                        | Secret access key                                                                                     |
+| clientId                  | false (consumed if 'authType 'msi')           | Azure user-assigned identity client ID. If not provided, system-assigned managed identity ID is used  |
+| sasToken                  | false                                         | SAS Token, either accountKey or SASToken is required if 'authType is 'default'                        |
+| serviceBaseURL            | false                                         | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net`         |
+| containerName             | true                                          | Container name                                                                                        |
+| createContainerIfNotExist | false                                         | Attempts to create the container if not existing. Must be one of 'true' or any string                 |
+| publicAccessType          | false (param for 'createContainerIfNotExist') | Sets the public access of a newly created container to one of 'blob' or 'container'                   |
+| defaultPath               | true                                          | The path to use when there is none being specified. Defaults to `assets`                              |
+| cdnBaseURL                | false                                         | CDN base url                                                                                          |
+| defaultCacheControl       | false                                         | Cache-Control header value for all uploaded files                                                     |
+| removeCN                  | false                                         | Set to true, to remove container name from azure URL                                                  |
 
 
 ### Security Middleware Configuration
