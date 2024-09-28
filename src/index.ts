@@ -130,8 +130,7 @@ async function handleUpload(
     file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
     if (
         file.url.includes(`/${config.containerName}/`) &&
-        config.removeCN &&
-        config.removeCN == 'true'
+        config.removeCN
     ) {
         file.url = file.url.replace(`/${config.containerName}/`, '/');
     }
