@@ -131,7 +131,7 @@ async function handleUpload(
     if (
         file.url.includes(`/${config.containerName}/`) &&
         config.removeCN &&
-        config.removeCN == 'true'
+        config.removeCN !== 'false'
     ) {
         file.url = file.url.replace(`/${config.containerName}/`, '/');
     }
