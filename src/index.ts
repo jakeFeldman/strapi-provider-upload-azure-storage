@@ -44,6 +44,7 @@ type StrapiFile = File & {
     ext: string;
     mime: string;
     path: string;
+    folderPath?: string;
 };
 
 function trimParam(input?: string) {
@@ -104,9 +105,14 @@ async function handleUpload(
     blobSvcClient: BlobServiceClient,
     file: StrapiFile
 ): Promise<void> {
+    const ids=file.folderPath?.split('/').filter(Boolean).map(Number)
+
     const serviceBaseURL = getServiceBaseUrl(config);
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-    const client = containerClient.getBlockBlobClient(getFileName(config.defaultPath, file));
+    const folders = ids ? await strapi.db.query("plugin::upload.folder").findMany({ where: { id: { $in: ids } } }) : [];
+    // const stringPath = "\\" + folders.map(folder => folder.name).join("\\");
+    const urlPath = "/" +folders.map(folder => folder.name).join("/");
+    const client = containerClient.getBlockBlobClient(getFileName(config.defaultPath+urlPath, file));
 
     if (trimParam(config?.createContainerIfNotExist) === 'true') {
         if (
@@ -149,8 +155,11 @@ async function handleDelete(
     blobSvcClient: BlobServiceClient,
     file: StrapiFile
 ): Promise<void> {
+    const ids=file.folderPath?.split('/').filter(Boolean).map(Number)
+    const folders = ids ? await strapi.db.query("plugin::upload.folder").findMany({ where: { id: { $in: ids } } }) : [];
+    const urlPath = "/" +folders.map(folder => folder.name).join("/");
     const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-    const client = containerClient.getBlobClient(getFileName(config.defaultPath, file));
+    const client = containerClient.getBlobClient(getFileName(config.defaultPath+urlPath, file));
     await client.delete();
     file.url = client.url;
 }
