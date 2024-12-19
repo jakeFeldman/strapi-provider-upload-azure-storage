@@ -1,6 +1,6 @@
 # Looking for additional maintainer
 
-If you're interesting in helping maintain the package please shoot me a message. Thanks - Jake
+This package is currently unmaintained. If you're interesting in helping maintain the package please shoot me a message. Thanks - Jake
 
 # Strapi Provider Upload Azure Storage
 
