@@ -128,12 +128,14 @@ async function handleUpload(
 
     const cdnBaseURL = trimParam(config.cdnBaseURL);
     file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
-    if (
-        file.url.includes(`/${config.containerName}/`) &&
-        config.removeCN &&
-        config.removeCN == 'true'
-    ) {
-        file.url = file.url.replace(`/${config.containerName}/`, '/');
+    if (config.removeCN && config.removeCN === 'true') {
+        const rawSegment = `/${config.containerName}/`;
+        const encodedSegment = `/${encodeURIComponent(config.containerName)}/`;
+        if (file.url.includes(rawSegment)) {
+            file.url = file.url.replace(rawSegment, '/');
+        } else if (file.url.includes(encodedSegment)) {
+            file.url = file.url.replace(encodedSegment, '/');
+        }
     }
 
     await client.uploadStream(
