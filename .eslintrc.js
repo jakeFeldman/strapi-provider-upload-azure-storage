@@ -1,9 +1,7 @@
 module.exports = {
     env: {
-        browser: true,
-        es2021: true,
+        es2022: true,
         node: true,
-        commonjs: true,
     },
     extends: [
         'eslint:recommended',
@@ -15,22 +13,13 @@ module.exports = {
         ecmaVersion: 'latest',
         sourceType: 'module',
     },
-    plugins: ['@typescript-eslint', 'simple-import-sort', 'unused-imports', 'prettier'],
+    plugins: ['@typescript-eslint', 'prettier'],
     rules: {
-        '@typescript-eslint/no-unused-vars': 'off',
-        'simple-import-sort/imports': [
-            'error',
-            {
-                groups: [['^\\u0000'], ['^@?\\w'], ['^src(/.*|$)']],
-            },
-        ],
-        'simple-import-sort/exports': 'error',
-        'no-unused-vars': 'off',
-        'unused-imports/no-unused-imports': 'error',
-        'unused-imports/no-unused-vars': [
+        '@typescript-eslint/no-unused-vars': [
             'error',
             { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
         ],
+        'no-unused-vars': 'off',
         'no-console': [
             'error',
             {
@@ -43,9 +32,7 @@ module.exports = {
                 arrowParens: 'always',
                 bracketSpacing: true,
                 endOfLine: 'lf',
-                htmlWhitespaceSensitivity: 'css',
                 printWidth: 100,
-                quoteProps: 'as-needed',
                 semi: true,
                 singleQuote: true,
                 tabWidth: 4,
@@ -54,4 +41,5 @@ module.exports = {
             },
         ],
     },
+    ignorePatterns: ['dist/', 'node_modules/'],
 };
