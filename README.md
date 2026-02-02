@@ -1,24 +1,15 @@
-# Looking for additional maintainer
-
-This package is currently unmaintained. If you're interesting in helping maintain the package please shoot me a message. Thanks - Jake
-
 # Strapi Provider Upload Azure Storage
 
-Plugin enabling image uploading to azure storage from strapi.
+Plugin enabling image uploading to Azure Blob Storage from Strapi.
 
 [![NpmVersion](https://img.shields.io/npm/v/strapi-provider-upload-azure-storage.svg)](https://www.npmjs.com/package/strapi-provider-upload-azure-storage) [![NpmDownloads](https://img.shields.io/npm/dt/strapi-provider-upload-azure-storage.svg)](https://www.npmjs.com/package/strapi-provider-upload-azure-storage)
 
-## Getting Started
+## Requirements
 
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes. See deployment for notes on how to deploy the project on a live system.
+- Node.js >= 18.0.0
+- Strapi v4 or v5
 
-### Prerequisites
-
-- strapi@4.0.0+
-
-### Installing
-
-Inside your strapi project run the following
+## Installation
 
 ```sh
 yarn add strapi-provider-upload-azure-storage
@@ -28,121 +19,156 @@ yarn add strapi-provider-upload-azure-storage
 npm install strapi-provider-upload-azure-storage
 ```
 
-## Usage
+## Configuration
 
-To enable the provider, create or edit the file at `./config/plugins.js`.
+Create or edit the file at `./config/plugins.js` (or `./config/plugins.ts` for TypeScript).
 
-This is an example `plugins.js` file for Azure storage:
+### Account Key Authentication
+
+The most common authentication method using your storage account key:
 
 ```js
 module.exports = ({ env }) => ({
   upload: {
     config: {
-      provider: "strapi-provider-upload-azure-storage",
+      provider: 'strapi-provider-upload-azure-storage',
       providerOptions: {
-        authType: env("STORAGE_AUTH_TYPE", "default"),
-        account: env("STORAGE_ACCOUNT"),
-        accountKey: env("STORAGE_ACCOUNT_KEY"),//either account key or sas token is enough to make authentication 
-        sasToken: env("STORAGE_ACCOUNT_SAS_TOKEN"),
-        serviceBaseURL: env("STORAGE_URL"), // optional
-        containerName: env("STORAGE_CONTAINER_NAME"),
-        createContainerIfNotExist: env("STORAGE_CREATE_CONTAINER_IF_NOT_EXIST", 'false'), // optional
-        publicAccessType: env("STORAGE_PUBLIC_ACCESS_TYPE"), // optional ('blob' | 'container')
-        defaultPath: "assets",
-        cdnBaseURL: env("STORAGE_CDN_URL"), // optional
-        defaultCacheControl: env("STORAGE_CACHE_CONTROL"), // optional
-        removeCN: env("REMOVE_CONTAINER_NAME"), // optional, if you want to remove container name from the URL 
+        authType: 'accountKey',
+        account: env('STORAGE_ACCOUNT'),
+        accountKey: env('STORAGE_ACCOUNT_KEY'),
+        containerName: env('STORAGE_CONTAINER_NAME'),
+        defaultPath: 'assets',
+        cdnBaseURL: env('STORAGE_CDN_URL'), // optional
+        cacheControl: env('STORAGE_CACHE_CONTROL'), // optional
       },
     },
   },
 });
+```
 
-// For using azure identities, the correct authType is 'msi' or (provide it in the environment variable)
-// clientId is used for Azure User-Assigned Identity access. If not provided, system-assigned managed identity is used instead
-// RBAC Role Storage Blob Data Contributor required for MSI   
+### SAS Token Authentication
 
+Use a pre-generated SAS token for limited access:
+
+```js
 module.exports = ({ env }) => ({
   upload: {
     config: {
-      provider: "strapi-provider-upload-azure-storage",
+      provider: 'strapi-provider-upload-azure-storage',
       providerOptions: {
-        authType: 'msi',
-        account: env("STORAGE_ACCOUNT"),
-        clientId: env("STORAGE_AZURE_CLIENT_ID"), // optional
-        serviceBaseURL: env("STORAGE_URL"), // optional
-        containerName: env("STORAGE_CONTAINER_NAME"),
-        createContainerIfNotExist: env("STORAGE_CREATE_CONTAINER_IF_NOT_EXIST", 'false'), // optional
-        publicAccessType: env("STORAGE_PUBLIC_ACCESS_TYPE"), // optional ('blob' | 'container')
-        defaultPath: "assets",
-        cdnBaseURL: env("STORAGE_CDN_URL"), // optional
-        defaultCacheControl: env("STORAGE_CACHE_CONTROL"), // optional
-        removeCN: env("REMOVE_CONTAINER_NAME"), // optional, if you want to remove container name from the URL 
+        authType: 'sasToken',
+        account: env('STORAGE_ACCOUNT'),
+        sasToken: env('STORAGE_SAS_TOKEN'), // e.g., '?sv=2022-11-02&ss=b&srt=sco...'
+        containerName: env('STORAGE_CONTAINER_NAME'),
+        defaultPath: 'assets',
       },
     },
   },
 });
-
 ```
 
-| Property                  | Required                                      | Description                                                                                           |
-| ------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------|
-| authType                  | true                                          | Whether to use a SAS key ("default") or an identity ("msi")                                           |
-| account                   | true                                          | Azure account name                                                                                    |
-| accountKey                | if 'authType 'default'                        | Secret access key                                                                                     |
-| clientId                  | false (consumed if 'authType 'msi')           | Azure user-assigned identity client ID. If not provided, system-assigned managed identity ID is used  |
-| sasToken                  | false                                         | SAS Token, either accountKey or SASToken is required if 'authType is 'default'                        |
-| serviceBaseURL            | false                                         | Base service URL to be used, optional. Defaults to `https://${account}.blob.core.windows.net`         |
-| containerName             | true                                          | Container name                                                                                        |
-| createContainerIfNotExist | false                                         | Attempts to create the container if not existing. Must be one of 'true' or any string                 |
-| publicAccessType          | false (param for 'createContainerIfNotExist') | Sets the public access of a newly created container to one of 'blob' or 'container'                   |
-| defaultPath               | true                                          | The path to use when there is none being specified. The value is ignored when containerName is `$root`. Defaults to `assets`                              |
-| cdnBaseURL                | false                                         | CDN base url                                                                                          |
-| defaultCacheControl       | false                                         | Cache-Control header value for all uploaded files                                                     |
-| removeCN                  | false                                         | Set to true, to remove container name from azure URL                                                  |
+> **Note:** SAS token authentication does not support generating signed URLs for private files. Use `accountKey` or `msi` authentication if you need `getSignedUrl()` functionality.
 
+### Managed Identity Authentication (MSI)
 
-### Security Middleware Configuration
+For Azure-hosted applications using managed identities:
 
-Due to the default settings in the Strapi Security Middleware you will need to modify the contentSecurityPolicy settings to properly see thumbnail previews in the Media Library. You should replace strapi::security string with the object bellow instead as explained in the middleware configuration documentation.
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        authType: 'msi',
+        account: env('STORAGE_ACCOUNT'),
+        clientId: env('STORAGE_AZURE_CLIENT_ID'), // optional, for user-assigned identity
+        containerName: env('STORAGE_CONTAINER_NAME'),
+        defaultPath: 'assets',
+        isPrivate: true, // enable signed URLs for private blobs
+        signedUrlExpiry: 60, // URL expiry in minutes (default: 60)
+      },
+    },
+  },
+});
+```
 
-To allow the azure storage content to be displayed, edit the file at `./config/middlewares.js`.
-You should replace the `strapi::security` string with the object below instead, see the [Middlewares configuration](https://docs.strapi.io/developer-docs/latest/setup-deployment-guides/configurations/required/middlewares.html) documentation for more details.
+> **Note:** MSI authentication requires the `Storage Blob Data Contributor` RBAC role.
 
-`./config/middlewares.js`
+### Private Files with Signed URLs
+
+To serve files through signed URLs (for private containers), enable the `isPrivate` option:
+
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        authType: 'accountKey',
+        account: env('STORAGE_ACCOUNT'),
+        accountKey: env('STORAGE_ACCOUNT_KEY'),
+        containerName: env('STORAGE_CONTAINER_NAME'),
+        defaultPath: 'assets',
+        isPrivate: true,
+        signedUrlExpiry: 30, // minutes
+      },
+    },
+  },
+});
+```
+
+When `isPrivate: true`, Strapi will call `getSignedUrl()` to generate time-limited access URLs for your files.
+
+## Configuration Options
+
+| Property | Type | Required | Default | Description |
+|----------|------|----------|---------|-------------|
+| `authType` | `'accountKey'` \| `'sasToken'` \| `'msi'` | Yes | - | Authentication method |
+| `account` | `string` | Yes | - | Azure storage account name |
+| `accountKey` | `string` | If `authType: 'accountKey'` | - | Storage account access key |
+| `sasToken` | `string` | If `authType: 'sasToken'` | - | SAS token (with or without leading `?`) |
+| `clientId` | `string` | No | - | Client ID for user-assigned managed identity |
+| `containerName` | `string` | Yes | - | Blob container name (use `$root` for root container) |
+| `defaultPath` | `string` | No | `''` | Default path prefix for uploaded files |
+| `serviceBaseURL` | `string` | No | `https://{account}.blob.core.windows.net` | Custom service URL (for emulators like Azurite) |
+| `cdnBaseURL` | `string` | No | - | CDN URL to replace storage URL in file URLs |
+| `cacheControl` | `string` | No | - | Cache-Control header for uploaded files |
+| `createContainerIfNotExist` | `boolean` | No | `false` | Create container if it doesn't exist |
+| `publicAccessType` | `'blob'` \| `'container'` | No | - | Public access level for auto-created containers |
+| `removeContainerFromUrl` | `boolean` | No | `false` | Remove container name from returned URLs |
+| `uploadOptions.bufferSize` | `number` | No | `4194304` | Buffer size for stream uploads (bytes) |
+| `uploadOptions.maxConcurrency` | `number` | No | `20` | Max concurrent upload operations |
+| `isPrivate` | `boolean` | No | `false` | Enable signed URL generation for private files |
+| `signedUrlExpiry` | `number` | No | `60` | Signed URL expiry time in minutes |
+
+## Security Middleware Configuration
+
+To display thumbnails in the Strapi Media Library, update the Content Security Policy in `./config/middlewares.js`:
 
 ```js
 module.exports = [
   // ...
   {
-    name: "strapi::security",
+    name: 'strapi::security',
     config: {
       contentSecurityPolicy: {
         useDefaults: true,
         directives: {
-          "connect-src": ["'self'", "https:"],
-          "img-src": [
+          'connect-src': ["'self'", 'https:'],
+          'img-src': [
             "'self'",
-            "data:",
-            "blob:",
-            "dl.airtable.com", // Required for Strapi < 4.10.6, you can remove it otherwise
-            "https://market-assets.strapi.io", // Required for Strapi >= 4.10.6, you can remove it otherwise
-            /**
-             * Note: If using a STORAGE_URL replace `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net` w/ process.env.STORAGE_URL
-             * If using a CDN URL make sure to include that url in the CSP headers process.env.STORAGE_CDN_URL
-             */
+            'data:',
+            'blob:',
+            'https://market-assets.strapi.io',
             `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net`,
+            // Add your CDN URL if using one:
+            // process.env.STORAGE_CDN_URL,
           ],
-          "media-src": [
+          'media-src': [
             "'self'",
-            "data:",
-            "blob:",
-            "dl.airtable.com", // Required for Strapi < 4.10.6, you can remove it otherwise
-            /**
-             * Note: If using a STORAGE_URL replace `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net` w/ process.env.STORAGE_URL
-             * If using a CDN URL make sure to include that url in the CSP headers process.env.STORAGE_CDN_URL
-             */
+            'data:',
+            'blob:',
             `https://${process.env.STORAGE_ACCOUNT}.blob.core.windows.net`,
-
           ],
           upgradeInsecureRequests: null,
         },
@@ -153,20 +179,135 @@ module.exports = [
 ];
 ```
 
-`serviceBaseURL` is optional, it is useful when connecting to Azure Storage API compatible services, like the official emulator [Azurite](https://github.com/Azure/Azurite/). `serviceBaseURL` would then look like `http://localhost:10000/your-storage-account-key`.  
-When `serviceBaseURL` is not provided, default `https://${account}.blob.core.windows.net` will be used.
+## Migration Guide: v3.x to v4.0.0
 
-`createContainerIfNotExist` can also be useful when working with [Azurite](https://github.com/Azure/Azurite/) as the tool provides very little by way of startup scripting.
+### Breaking Changes
 
-`cdnBaseURL` is optional, it is useful when using CDN in front of your storage account. Images will be returned with the CDN URL instead of the storage account URL.
+v4.0.0 includes several breaking changes to improve consistency and type safety:
 
-`defaultCacheControl` is optional. It is useful when you want to allow clients to use a cached version of the file. Azure storage will return this value in the [`Cache-Control` HTTP-header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control?retiredLocale=de) of the response. 
+#### 1. Authentication Type Values
 
-`removeCN` is optional. Some azure account configurations are such that they exclude 'container name' from the URL at which data is saved. It is by default set to false, if you want to remove container name from URL, set it to 'true'.
+The `authType` value `'default'` has been split into explicit types:
+
+```js
+// Before (v3.x)
+authType: 'default',
+accountKey: '...',     // or sasToken: '...'
+
+// After (v4.0.0) - Account Key
+authType: 'accountKey',
+accountKey: '...',
+
+// After (v4.0.0) - SAS Token
+authType: 'sasToken',
+sasToken: '...',
+```
+
+#### 2. Boolean Configuration Values
+
+Boolean options now use actual booleans instead of strings:
+
+```js
+// Before (v3.x)
+createContainerIfNotExist: 'true',
+
+// After (v4.0.0)
+createContainerIfNotExist: true,
+```
+
+#### 3. Renamed Options
+
+| v3.x | v4.0.0 |
+|------|--------|
+| `removeCN` | `removeContainerFromUrl` |
+| `defaultCacheControl` | `cacheControl` |
+| `uploadOptions.maxBuffers` | `uploadOptions.maxConcurrency` |
+
+#### 4. Node.js Requirement
+
+v4.0.0 requires Node.js 18.0.0 or higher.
+
+### Migration Example
+
+**Before (v3.x):**
+
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        authType: 'default',
+        account: env('STORAGE_ACCOUNT'),
+        accountKey: env('STORAGE_ACCOUNT_KEY'),
+        containerName: env('STORAGE_CONTAINER_NAME'),
+        createContainerIfNotExist: 'true',
+        defaultPath: 'assets',
+        defaultCacheControl: 'max-age=31536000',
+        removeCN: 'true',
+      },
+    },
+  },
+});
+```
+
+**After (v4.0.0):**
+
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        authType: 'accountKey',
+        account: env('STORAGE_ACCOUNT'),
+        accountKey: env('STORAGE_ACCOUNT_KEY'),
+        containerName: env('STORAGE_CONTAINER_NAME'),
+        createContainerIfNotExist: true,
+        defaultPath: 'assets',
+        cacheControl: 'max-age=31536000',
+        removeContainerFromUrl: true,
+      },
+    },
+  },
+});
+```
+
+### New Features in v4.0.0
+
+- **`isPrivate` option**: Mark your storage as private to enable signed URL generation
+- **`getSignedUrl()` method**: Generate time-limited access URLs for private blobs
+- **`signedUrlExpiry` option**: Configure how long signed URLs remain valid
+- **Improved TypeScript types**: Better IDE support with declaration maps
+
+## Development
+
+### Local Development with Azurite
+
+For local development, you can use [Azurite](https://github.com/Azure/Azurite/), the Azure Storage emulator:
+
+```js
+module.exports = ({ env }) => ({
+  upload: {
+    config: {
+      provider: 'strapi-provider-upload-azure-storage',
+      providerOptions: {
+        authType: 'accountKey',
+        account: 'devstoreaccount1',
+        accountKey: 'Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==',
+        serviceBaseURL: 'http://127.0.0.1:10000/devstoreaccount1',
+        containerName: 'strapi',
+        createContainerIfNotExist: true,
+        defaultPath: 'assets',
+      },
+    },
+  },
+});
+```
 
 ## Contributing
 
-Contributions are welcome
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## Versioning
 
@@ -174,13 +315,13 @@ We use [SemVer](http://semver.org/) for versioning. For the versions available, 
 
 ## Authors
 
-* **Jake Feldman** - *Initial work* - [jakeFeldman](https://github.com/jakeFeldman)
+- **Jake Feldman** - *Initial work* - [jakeFeldman](https://github.com/jakeFeldman)
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
 
 ## Acknowledgments
 
-* strapi.io
-* Azure
+- [Strapi](https://strapi.io)
+- [Azure Blob Storage](https://azure.microsoft.com/en-us/services/storage/blobs/)

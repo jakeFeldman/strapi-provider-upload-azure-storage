@@ -1,228 +1,341 @@
 import { DefaultAzureCredential } from '@azure/identity';
 import {
     AnonymousCredential,
+    BlobSASPermissions,
     BlobServiceClient,
-    newPipeline,
+    generateBlobSASQueryParameters,
     PublicAccessType,
+    SASProtocol,
     StorageSharedKeyCredential,
 } from '@azure/storage-blob';
-import internal from 'stream';
+import { Readable } from 'stream';
 
-type CommonConfig = {
+// ============================================================================
+// Types
+// ============================================================================
+
+interface BaseConfig {
     account: string;
-    serviceBaseURL?: string;
     containerName: string;
-    defaultPath: string;
+    defaultPath?: string;
+    serviceBaseURL?: string;
     cdnBaseURL?: string;
-    defaultCacheControl?: string;
-    createContainerIfNotExist?: string;
+    cacheControl?: string;
+    createContainerIfNotExist?: boolean;
     publicAccessType?: PublicAccessType;
-    removeCN?: string;
+    removeContainerFromUrl?: boolean;
     uploadOptions?: {
-        bufferSize: number;
-        maxBuffers: number;
+        bufferSize?: number;
+        maxConcurrency?: number;
     };
-};
+    isPrivate?: boolean;
+    signedUrlExpiry?: number;
+}
 
-type Config = DefaultConfig | ManagedIdentityConfig;
-
-type DefaultConfig = CommonConfig & {
-    authType: 'default';
+interface AccountKeyConfig extends BaseConfig {
+    authType: 'accountKey';
     accountKey: string;
-    sasToken: string;
-};
+}
 
-type ManagedIdentityConfig = CommonConfig & {
+interface SasTokenConfig extends BaseConfig {
+    authType: 'sasToken';
+    sasToken: string;
+}
+
+interface ManagedIdentityConfig extends BaseConfig {
     authType: 'msi';
     clientId?: string;
-};
+}
 
-type StrapiFile = File & {
-    stream: internal.Readable;
+type ProviderConfig = AccountKeyConfig | SasTokenConfig | ManagedIdentityConfig;
+
+interface StrapiFile {
+    name: string;
     hash: string;
-    url: string;
     ext: string;
     mime: string;
-    path: string;
-};
+    path?: string;
+    url: string;
+    buffer?: Buffer;
+    stream?: Readable;
+    size?: number;
+}
 
-function trimParam(input?: string) {
+// ============================================================================
+// Utility Functions
+// ============================================================================
+
+function trimParam(input?: string): string {
     return typeof input === 'string' ? input.trim() : '';
 }
 
-function getServiceBaseUrl(config: Config) {
+function getServiceBaseUrl(config: ProviderConfig): string {
     return (
         trimParam(config.serviceBaseURL) ||
         `https://${trimParam(config.account)}.blob.core.windows.net`
     );
 }
 
-function isRootContainer(containerName: string) {
+function isRootContainer(containerName: string): boolean {
     return trimParam(containerName).toLowerCase() === '$root';
 }
 
-function getFileName(containerName: string, path: string, file: StrapiFile) {
-  const name = `${file.hash}${file.ext}`;
-  if (isRootContainer(containerName) || trimParam(path) === '')
-    return name;
-  return `${trimParam(path)}/${file.hash}${file.ext}`;
+function getBlobName(config: ProviderConfig, file: StrapiFile): string {
+    const fileName = `${file.hash}${file.ext}`;
+    const path = trimParam(config.defaultPath);
+
+    if (isRootContainer(config.containerName) || path === '') {
+        return fileName;
+    }
+
+    return `${path}/${fileName}`;
 }
 
-function makeBlobServiceClient(config: Config) {
+function buildFileUrl(config: ProviderConfig, blobUrl: string, serviceBaseURL: string): string {
+    let url = blobUrl;
+
+    const cdnBaseURL = trimParam(config.cdnBaseURL);
+    if (cdnBaseURL) {
+        url = url.replace(serviceBaseURL, cdnBaseURL);
+    }
+
+    if (config.removeContainerFromUrl) {
+        const containerName = trimParam(config.containerName);
+        const rawSegment = `/${containerName}/`;
+        const encodedSegment = `/${encodeURIComponent(containerName)}/`;
+
+        if (url.includes(rawSegment)) {
+            url = url.replace(rawSegment, '/');
+        } else if (url.includes(encodedSegment)) {
+            url = url.replace(encodedSegment, '/');
+        }
+    }
+
+    return url;
+}
+
+// ============================================================================
+// Azure Client Factory
+// ============================================================================
+
+interface AzureClients {
+    blobServiceClient: BlobServiceClient;
+    sharedKeyCredential?: StorageSharedKeyCredential;
+    defaultAzureCredential?: DefaultAzureCredential;
+}
+
+function createAzureClients(config: ProviderConfig): AzureClients {
     const serviceBaseURL = getServiceBaseUrl(config);
 
     switch (config.authType) {
-        case 'default': {
+        case 'accountKey': {
             const account = trimParam(config.account);
             const accountKey = trimParam(config.accountKey);
-            const sasToken = trimParam(config.sasToken);
-            if (sasToken != '') {
-                const anonymousCredential = new AnonymousCredential();
-                return new BlobServiceClient(`${serviceBaseURL}${sasToken}`, anonymousCredential);
-            }
             const sharedKeyCredential = new StorageSharedKeyCredential(account, accountKey);
-            const pipeline = newPipeline(sharedKeyCredential);
-            return new BlobServiceClient(serviceBaseURL, pipeline);
+            const blobServiceClient = new BlobServiceClient(serviceBaseURL, sharedKeyCredential);
+            return { blobServiceClient, sharedKeyCredential };
         }
+
+        case 'sasToken': {
+            const sasToken = trimParam(config.sasToken);
+            const urlWithSas = sasToken.startsWith('?')
+                ? `${serviceBaseURL}${sasToken}`
+                : `${serviceBaseURL}?${sasToken}`;
+            const blobServiceClient = new BlobServiceClient(urlWithSas, new AnonymousCredential());
+            return { blobServiceClient };
+        }
+
         case 'msi': {
             const clientId = trimParam(config.clientId);
-            if (clientId != null && clientId != '') {
-                return new BlobServiceClient(
-                    serviceBaseURL,
-                    new DefaultAzureCredential({ managedIdentityClientId: clientId })
-                );
-            }
-            return new BlobServiceClient(serviceBaseURL, new DefaultAzureCredential());
+            const defaultAzureCredential = clientId
+                ? new DefaultAzureCredential({ managedIdentityClientId: clientId })
+                : new DefaultAzureCredential();
+            const blobServiceClient = new BlobServiceClient(serviceBaseURL, defaultAzureCredential);
+            return { blobServiceClient, defaultAzureCredential };
         }
+
         default: {
             const exhaustiveCheck: never = config;
-            throw new Error(exhaustiveCheck);
+            throw new Error(`Unknown auth type: ${JSON.stringify(exhaustiveCheck)}`);
         }
     }
 }
 
-const uploadOptions: CommonConfig['uploadOptions'] = {
-    bufferSize: 4 * 1024 * 1024, // 4MB
-    maxBuffers: 20,
-};
+// ============================================================================
+// Upload Options
+// ============================================================================
+
+const DEFAULT_BUFFER_SIZE = 4 * 1024 * 1024; // 4MB
+const DEFAULT_MAX_CONCURRENCY = 20;
+const DEFAULT_SIGNED_URL_EXPIRY_MINUTES = 60;
+
+// ============================================================================
+// Provider Implementation
+// ============================================================================
+
+async function ensureContainer(
+    config: ProviderConfig,
+    blobServiceClient: BlobServiceClient
+): Promise<void> {
+    if (!config.createContainerIfNotExist) {
+        return;
+    }
+
+    const containerClient = blobServiceClient.getContainerClient(trimParam(config.containerName));
+    const accessType = config.publicAccessType;
+
+    if (accessType === 'container' || accessType === 'blob') {
+        await containerClient.createIfNotExists({ access: accessType });
+    } else {
+        await containerClient.createIfNotExists();
+    }
+}
 
 async function handleUpload(
-    config: Config,
-    blobSvcClient: BlobServiceClient,
-    file: StrapiFile
+    config: ProviderConfig,
+    clients: AzureClients,
+    file: StrapiFile,
+    useStream: boolean
 ): Promise<void> {
     const serviceBaseURL = getServiceBaseUrl(config);
-    const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-    const client = containerClient.getBlockBlobClient(getFileName(config.containerName, config.defaultPath, file));
+    const containerClient = clients.blobServiceClient.getContainerClient(
+        trimParam(config.containerName)
+    );
+    const blobName = getBlobName(config, file);
+    const blockBlobClient = containerClient.getBlockBlobClient(blobName);
 
-    if (trimParam(config?.createContainerIfNotExist) === 'true') {
-        if (
-            trimParam(config?.publicAccessType) === 'container' ||
-            trimParam(config?.publicAccessType) === 'blob'
-        ) {
-            await containerClient.createIfNotExists({ access: config.publicAccessType });
-        } else {
-            await containerClient.createIfNotExists();
-        }
-    }
+    await ensureContainer(config, clients.blobServiceClient);
 
-    const options = {
-        blobHTTPHeaders: {
-            blobContentType: file.mime,
-            blobCacheControl: trimParam(config.defaultCacheControl),
-        },
+    const blobHTTPHeaders = {
+        blobContentType: file.mime,
+        blobCacheControl: trimParam(config.cacheControl),
     };
 
-    const cdnBaseURL = trimParam(config.cdnBaseURL);
-    file.url = cdnBaseURL ? client.url.replace(serviceBaseURL, cdnBaseURL) : client.url;
-    if (config.removeCN && config.removeCN === 'true') {
-        const rawSegment = `/${config.containerName}/`;
-        const encodedSegment = `/${encodeURIComponent(config.containerName)}/`;
-        if (file.url.includes(rawSegment)) {
-            file.url = file.url.replace(rawSegment, '/');
-        } else if (file.url.includes(encodedSegment)) {
-            file.url = file.url.replace(encodedSegment, '/');
-        }
+    if (useStream && file.stream) {
+        const bufferSize = config.uploadOptions?.bufferSize ?? DEFAULT_BUFFER_SIZE;
+        const maxConcurrency = config.uploadOptions?.maxConcurrency ?? DEFAULT_MAX_CONCURRENCY;
+
+        await blockBlobClient.uploadStream(file.stream, bufferSize, maxConcurrency, {
+            blobHTTPHeaders,
+        });
+    } else if (file.buffer) {
+        await blockBlobClient.uploadData(file.buffer, {
+            blobHTTPHeaders,
+        });
+    } else {
+        throw new Error('File must have either a buffer or stream property');
     }
 
-    await client.uploadStream(
-        file.stream,
-        config.uploadOptions?.bufferSize ?? uploadOptions!.bufferSize,
-        config.uploadOptions?.maxBuffers ?? uploadOptions!.maxBuffers,
-        options
-    );
+    file.url = buildFileUrl(config, blockBlobClient.url, serviceBaseURL);
 }
 
 async function handleDelete(
-    config: Config,
-    blobSvcClient: BlobServiceClient,
+    config: ProviderConfig,
+    clients: AzureClients,
     file: StrapiFile
 ): Promise<void> {
-    const containerClient = blobSvcClient.getContainerClient(trimParam(config.containerName));
-    const client = containerClient.getBlobClient(getFileName(config.containerName, config.defaultPath, file));
-    await client.delete();
-    file.url = client.url;
+    const containerClient = clients.blobServiceClient.getContainerClient(
+        trimParam(config.containerName)
+    );
+    const blobName = getBlobName(config, file);
+    const blobClient = containerClient.getBlobClient(blobName);
+
+    await blobClient.deleteIfExists();
 }
 
+async function handleGetSignedUrl(
+    config: ProviderConfig,
+    clients: AzureClients,
+    file: StrapiFile
+): Promise<{ url: string }> {
+    if (config.authType === 'sasToken') {
+        throw new Error(
+            'Cannot generate signed URLs when using SAS token authentication. ' +
+                'SAS tokens cannot be used to create new signed URLs. ' +
+                'Use accountKey or msi authentication instead.'
+        );
+    }
+
+    const containerName = trimParam(config.containerName);
+    const blobName = getBlobName(config, file);
+    const expiryMinutes = config.signedUrlExpiry ?? DEFAULT_SIGNED_URL_EXPIRY_MINUTES;
+
+    const startsOn = new Date();
+    const expiresOn = new Date(startsOn.getTime() + expiryMinutes * 60 * 1000);
+
+    const permissions = BlobSASPermissions.parse('r');
+
+    const containerClient = clients.blobServiceClient.getContainerClient(containerName);
+    const blobClient = containerClient.getBlobClient(blobName);
+
+    let sasQueryParams: string;
+
+    if (config.authType === 'accountKey' && clients.sharedKeyCredential) {
+        sasQueryParams = generateBlobSASQueryParameters(
+            {
+                containerName,
+                blobName,
+                permissions,
+                startsOn,
+                expiresOn,
+                protocol: SASProtocol.Https,
+            },
+            clients.sharedKeyCredential
+        ).toString();
+    } else if (config.authType === 'msi' && clients.defaultAzureCredential) {
+        const userDelegationKey = await clients.blobServiceClient.getUserDelegationKey(
+            startsOn,
+            expiresOn
+        );
+
+        sasQueryParams = generateBlobSASQueryParameters(
+            {
+                containerName,
+                blobName,
+                permissions,
+                startsOn,
+                expiresOn,
+                protocol: SASProtocol.Https,
+            },
+            userDelegationKey,
+            trimParam(config.account)
+        ).toString();
+    } else {
+        throw new Error('Unable to generate signed URL: missing credentials');
+    }
+
+    const signedUrl = `${blobClient.url}?${sasQueryParams}`;
+
+    return { url: signedUrl };
+}
+
+// ============================================================================
+// Module Export
+// ============================================================================
+
 module.exports = {
-    provider: 'azure',
-    auth: {
-        authType: {
-            label: 'Authentication type (required, either "msi" or "default")',
-            type: 'text',
-        },
-        clientId: {
-            label: 'Azure Identity ClientId (consumed if authType is "msi" and passed as DefaultAzureCredential({ managedIdentityClientId: clientId }))',
-            type: 'text',
-        },
-        account: {
-            label: 'Account name (required)',
-            type: 'text',
-        },
-        accountKey: {
-            label: 'Secret access key (required if authType is "default")',
-            type: 'text',
-        },
-        serviceBaseURL: {
-            label: 'Base service URL to be used, optional. Defaults to https://${account}.blob.core.windows.net (optional)',
-            type: 'text',
-        },
-        containerName: {
-            label: 'Container name (required)',
-            type: 'text',
-        },
-        createContainerIfNotExist: {
-            label: 'Create container on upload if it does not (optional)',
-            type: 'text',
-        },
-        publicAccessType: {
-            label: 'If createContainerIfNotExist is true, set the public access type to one of "blob" or "container" (optional)',
-            type: 'text',
-        },
-        cdnBaseURL: {
-            label: 'CDN base url (optional)',
-            type: 'text',
-        },
-        defaultCacheControl: {
-            label: 'Default cache-control setting for all uploaded files',
-            type: 'text',
-        },
-        removeCN: {
-            label: 'Remove container name from URL (optional)',
-            type: 'text',
-        },
-    },
-    init: (config: Config) => {
-        const blobSvcClient = makeBlobServiceClient(config);
+    init(config: ProviderConfig) {
+        const clients = createAzureClients(config);
+
         return {
-            upload(file: StrapiFile) {
-                return handleUpload(config, blobSvcClient, file);
+            async upload(file: StrapiFile): Promise<void> {
+                return handleUpload(config, clients, file, false);
             },
-            uploadStream(file: StrapiFile) {
-                return handleUpload(config, blobSvcClient, file);
+
+            async uploadStream(file: StrapiFile): Promise<void> {
+                return handleUpload(config, clients, file, true);
             },
-            delete(file: StrapiFile) {
-                return handleDelete(config, blobSvcClient, file);
+
+            async delete(file: StrapiFile): Promise<void> {
+                return handleDelete(config, clients, file);
+            },
+
+            isPrivate(): boolean {
+                return config.isPrivate === true;
+            },
+
+            async getSignedUrl(file: StrapiFile): Promise<{ url: string }> {
+                return handleGetSignedUrl(config, clients, file);
             },
         };
     },
